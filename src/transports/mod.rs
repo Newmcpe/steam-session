@@ -1,6 +1,8 @@
+pub mod proxy;
 pub mod web_api;
 pub mod websocket;
 
+pub use proxy::{Socks5ProxyConfig, Socks5ProxyConfigError};
 pub use websocket::WebSocketCMTransport;
 
 use crate::authentication_client::Error as AuthenticationClientError;

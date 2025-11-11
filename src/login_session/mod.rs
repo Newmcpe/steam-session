@@ -70,6 +70,32 @@ pub async fn connect_webapi() -> Result<LoginSession<WebApiTransport>, LoginSess
         .build()
 }
 
+pub async fn connect_ws_with_socks5_proxy(
+    proxy: &crate::transports::Socks5ProxyConfig,
+) -> Result<LoginSession<WebSocketCMTransport>, LoginSessionError> {
+    let platform_type = EAuthTokenPlatformType::k_EAuthTokenPlatformType_MobileApp;
+    let client = proxy.build_reqwest_client()?;
+    let transport = WebSocketCMTransport::connect_with_socks5_proxy(proxy)
+        .await
+        .map_err(AuthenticationClientError::WebSocketCM)?;
+
+    LoginSessionBuilder::new(transport, platform_type)
+        .client(client)
+        .build()
+}
+
+pub async fn connect_webapi_with_socks5_proxy(
+    proxy: &crate::transports::Socks5ProxyConfig,
+) -> Result<LoginSession<WebApiTransport>, LoginSessionError> {
+    let platform_type = EAuthTokenPlatformType::k_EAuthTokenPlatformType_MobileApp;
+    let client = proxy.build_reqwest_client()?;
+    let transport = WebApiTransport::with_custom_client(client.clone());
+
+    LoginSessionBuilder::new(transport, platform_type)
+        .client(client)
+        .build()
+}
+
 impl<T> LoginSession<T>
 where
     T: Transport,

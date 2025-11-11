@@ -38,4 +38,8 @@ pub enum Error {
     UnknownEResult(i32),
     #[error("Received EResult other than OK: {:?}", .0)]
     EResultNotOK(EResult),
+    #[error("SOCKS5 proxy configuration error: {0}")]
+    ProxyConfig(String),
+    #[error("SOCKS5 proxy error: {0}")]
+    Socks(#[from] tokio_socks::Error),
 }

@@ -44,4 +44,12 @@ pub enum LoginSessionError {
     NoCookiesInResponse,
     #[error("Receiver error: {}", .0)]
     RecvError(#[from] tokio::sync::oneshot::error::RecvError),
+    #[error("SOCKS5 proxy configuration error: {0}")]
+    ProxyConfig(String),
+}
+
+impl From<crate::transports::Socks5ProxyConfigError> for LoginSessionError {
+    fn from(value: crate::transports::Socks5ProxyConfigError) -> Self {
+        LoginSessionError::ProxyConfig(value.to_string())
+    }
 }

@@ -98,6 +98,22 @@ impl WebSocketCMTransport {
         Ok(transport)
     }
     
+    /// Connects to a CM server through a SOCKS5 proxy.
+    pub async fn connect_with_socks5_proxy(
+        proxy: &crate::transports::Socks5ProxyConfig,
+    ) -> Result<WebSocketCMTransport, Error> {
+        let transport = helpers::connect_to_cm_with_socks5_proxy(&DEFAULT_CM_LIST, Some(proxy))
+            .await?;
+        let mut hello = CMsgClientHello::new();
+
+        hello.set_protocol_version(PROTOCOL_VERSION);
+        transport
+            .send_message(EMsg::ClientHello, hello, None)
+            .await?;
+
+        Ok(transport)
+    }
+    
     /// Creates a new [`WebSocketCMTransport`].
     fn new(
         source: SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>,

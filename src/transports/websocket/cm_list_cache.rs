@@ -78,24 +78,24 @@ impl CmListCache {
     
     /// Updates the list of servers, if they are oudated.
     pub async fn update(&mut self) -> Result<(), Error> {
+        self.update_with_client(&DEFAULT_CLIENT).await
+    }
+
+    pub async fn update_with_client(&mut self, client: &Client) -> Result<(), Error> {
         let now = chrono::offset::Utc::now();
         let is_expired = if let Some(last_cached) = self.last_cached {
             let difference = now - last_cached;
-            
             difference > self.expiry_duration
         } else {
-            // never cached
             true
         };
-        
+
         if !is_expired {
-            // no need to update
-            return Ok(())
+            return Ok(());
         }
-        
-        self.inner = get_cm_list().await?;
+
+        self.inner = get_cm_list(client).await?;
         self.last_cached = Some(now);
-        
         Ok(())
     }
     
@@ -125,25 +125,28 @@ impl DerefMut for CmListCache {
     }
 }
     
-async fn get_cm_list() -> Result<Vec<CmServer>, Error> {
+async fn get_cm_list(client: &Client) -> Result<Vec<CmServer>, Error> {
     // todo handle errors
-    fetch_cm_list().await
+    fetch_cm_list(client).await
 }
 
-async fn fetch_cm_list() -> Result<Vec<CmServer>, Error> {
+async fn fetch_cm_list(client: &Client) -> Result<Vec<CmServer>, Error> {
     let url = "https://api.steampowered.com/ISteamDirectory/GetCMListForConnect/v0001/?cellid=0&format=vdf";
     let mut headers = HeaderMap::new();
-    
-    headers.append(USER_AGENT, HeaderValue::from_str("Valve/Steam HTTP Client 1.0")?);
-    headers.append(ACCEPT_CHARSET,HeaderValue::from_str("ISO-8859-1,utf-8,*;q=0.7")?);
+
+    headers.append(
+        USER_AGENT,
+        HeaderValue::from_str("Valve/Steam HTTP Client 1.0")?,
+    );
+    headers.append(
+        ACCEPT_CHARSET,
+        HeaderValue::from_str("ISO-8859-1,utf-8,*;q=0.7")?,
+    );
     headers.append(ACCEPT, HeaderValue::from_str("text/html,*/*;q=0.9")?);
-    
-    let response = DEFAULT_CLIENT.get(url)
-        .headers(headers)
-        .send().await?;
-    let text = check_response_ok(response).await?
-        .text().await?;
-    
+
+    let response = client.get(url).headers(headers).send().await?;
+    let text = check_response_ok(response).await?.text().await?;
+
     parse_cm_list(&text)
 }
 
